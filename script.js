@@ -1,92 +1,71 @@
-// ✅ Confirma que o script foi carregado
-console.log("✅ script.js compat carregado com sucesso!");
+// ========== GERADOR DE NÚMEROS E RESERVAS ========== //
+const grid = document.getElementById('grid');
+const modal = document.getElementById('modal');
+const form = document.getElementById('reserva-form');
+const numeroSelecionadoInput = document.getElementById('numero-selecionado');
 
-// 🔥 Usa o Firebase já carregado no HTML
-const db = firebase.firestore();
+let numeros = [];
 
-// ============================
-// 📲 Inicializa grade de números
-// ============================
-document.addEventListener('DOMContentLoaded', () => {
-  console.log("📲 DOM carregado!");
-  const grid = document.getElementById('grid');
-  const totalNumeros = 250;
-
-  for (let i = 1; i <= totalNumeros; i++) {
-    const numero = i.toString().padStart(3, '0');
-    const btn = document.createElement('button');
-    btn.textContent = numero;
-    btn.className = 'numero disponivel';
-    btn.id = `num-${numero}`;
-    btn.addEventListener('click', () => abrirModal(numero));
-    grid.appendChild(btn);
-  }
-
-  // ============================
-  // 🟡 Listener em tempo real no Firestore
-  // ============================
-  db.doc("rifa/numeros").onSnapshot((docSnap) => {
-    if (docSnap.exists) {
-      const data = docSnap.data();
-      Object.keys(data).forEach(numero => {
-        const info = data[numero];
-        const btn = document.getElementById(`num-${numero}`);
-        if (btn) {
-          if (info.status === 'reservado') {
-            btn.className = 'numero reservado';
-            btn.disabled = true;
-          } else if (info.status === 'vendido') {
-            btn.className = 'numero vendido';
-            btn.disabled = true;
-          } else {
-            btn.className = 'numero disponivel';
-            btn.disabled = false;
-          }
-        }
-      });
-    }
+// Cria 250 números disponíveis
+for (let i = 1; i <= 250; i++) {
+  numeros.push({
+    numero: i.toString().padStart(3, '0'),
+    status: 'disponivel',
+    comprador: null
   });
-});
+}
 
-// ============================
-// 🟢 Funções do Modal
-// ============================
+// Renderiza a grade
+function renderGrid() {
+  grid.innerHTML = '';
+  numeros.forEach(n => {
+    const div = document.createElement('div');
+    div.classList.add('numero', n.status);
+    div.textContent = n.numero;
+
+    if (n.status === 'disponivel') {
+      div.addEventListener('click', () => abrirModal(n.numero));
+    }
+
+    grid.appendChild(div);
+  });
+}
+
+renderGrid();
+
+// Abre modal de reserva
 function abrirModal(numero) {
-  document.getElementById('numero-selecionado').value = numero;
-  document.getElementById('modal').classList.remove('hidden');
+  numeroSelecionadoInput.value = numero;
+  modal.classList.remove('hidden');
 }
 
+// Fecha modal
 function fecharModal() {
-  document.getElementById('modal').classList.add('hidden');
+  modal.classList.add('hidden');
+  form.reset();
 }
 
-// ============================
-// 📝 Reserva do número
-// ============================
-document.getElementById('reserva-form').addEventListener('submit', async (e) => {
+// Salva reserva localmente (pode ser depois no Firebase)
+form.addEventListener('submit', (e) => {
   e.preventDefault();
-  const numero = document.getElementById('numero-selecionado').value;
+  const numero = numeroSelecionadoInput.value;
   const nome = document.getElementById('nome').value;
   const whatsapp = document.getElementById('whatsapp').value;
+  const arquivo = document.getElementById('comprovante').files[0];
 
-  const docRef = db.doc("rifa/numeros");
-  const snap = await docRef.get();
-  let data = snap.exists ? snap.data() : {};
-
-  if (data[numero] && data[numero].status !== 'disponivel') {
-    alert("Esse número já foi reservado ou vendido.");
-    fecharModal();
+  if (!arquivo) {
+    alert('Por favor, envie o comprovante de pagamento.');
     return;
   }
 
-  data[numero] = {
-    nome,
-    whatsapp,
-    status: "reservado",
-    timestamp: new Date().toISOString()
-  };
-
-  await docRef.set(data);
-  console.log(`📌 Número ${numero} reservado para ${nome}`);
-  fecharModal();
+  const index = numeros.findIndex(n => n.numero === numero);
+  if (index !== -1) {
+    numeros[index].status = 'reservado';
+    numeros[index].comprador = { nome, whatsapp, arquivoNome: arquivo.name };
+    renderGrid();
+    fecharModal();
+    alert(`Número ${numero} reservado com sucesso!`);
+  }
 });
+
+// ========== NO FUTURO: INTEGRAR COM FIREBASE PARA SALVAR ONLINE ==========

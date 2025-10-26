@@ -1,13 +1,12 @@
 /* ======== ESTILOS GERAIS ======== */
-html, body {
-  margin: 0;
-  padding: 0;
-}
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background-color: #f5f5f5;
-  /* Removido flex do body para evitar bug de scroll no iOS */
-  display: block;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 header {
@@ -28,25 +27,12 @@ p {
   font-size: 16px;
 }
 
-/* ======== CORREÇÃO DE SCROLL MOBILE ======== */
-main {
-  width: 100%;
-  overflow-x: auto;              /* permite rolagem horizontal */
-  -webkit-overflow-scrolling: touch; /* suaviza no iOS */
-  overscroll-behavior-x: contain;    /* evita bounce puxar a página */
-  padding: 0 12px;               /* respiro nas laterais para não cortar a 1ª coluna */
-  box-sizing: border-box;
-  min-height: 0;                 /* corrige edge cases de flex containers */
-}
-
 /* ======== GRADE DE NÚMEROS ======== */
 .grid {
   display: grid;
-  /* Mantém 10 colunas fixas para 250 números → 25 linhas */
-  grid-template-columns: repeat(10, 60px);
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
   gap: 8px;
-  width: max-content;    /* largura natural do conteúdo para rolar no iOS */
-  min-width: 600px;      /* garante largura mínima para scroll */
+  max-width: 800px;
   margin: 20px auto;
   padding: 10px;
 }
@@ -62,11 +48,25 @@ main {
   user-select: none;
 }
 
-.numero:hover { background-color: #cfcfcf; }
+.numero:hover {
+  background-color: #cfcfcf;
+}
 
-.numero.disponivel { background-color: #4CAF50; color: white; }
-.numero.reservado  { background-color: #FFC107; color: #000; }
-.numero.vendido    { background-color: #F44336; color: white; cursor: not-allowed; }
+.numero.disponivel {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.numero.reservado {
+  background-color: #FFC107;
+  color: #000;
+}
+
+.numero.vendido {
+  background-color: #F44336;
+  color: white;
+  cursor: not-allowed;
+}
 
 /* ======== MODAL ======== */
 .modal {
@@ -135,11 +135,8 @@ main {
 
 @media (max-width: 600px) {
   .grid {
-    grid-template-columns: repeat(10, 48px); /* colunas um pouco menores no mobile */
-    gap: 6px;
+    grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
   }
-  .numero { padding: 10px; }
-}
   .numero {
     padding: 10px;
   }
