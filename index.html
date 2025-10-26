@@ -6,29 +6,13 @@
   <title>Rifa Stanley 7,5L</title>
   <link rel="stylesheet" href="style.css" />
 
-  <!-- Firebase compat SDK -->
+  <!-- Firebase SDK compat -->
   <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
-  <script src="script.js"></script>
-
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyAmIKqT6FKAIOJXvBMop89kATeKUsy4yR0",
-      authDomain: "rifa-stanley.firebaseapp.com",
-      projectId: "rifa-stanley",
-      storageBucket: "rifa-stanley.firebasestorage.app",
-      messagingSenderId: "811838072733",
-      appId: "1:811838072733:web:c380ce75a40d1b90ca3174",
-      measurementId: "G-L9CQJX7ZNJ"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-  </script>
 </head>
 <body>
   <header>
-    <h1>🎁 Rifa - IAM - Stanley 7,5L Green</h1>
+    <h1>🎁 Rifa Stanley 7,5L Green</h1>
     <p>1 número = R$ 15,00 | 2 números = R$ 20,00</p>
   </header>
 
@@ -58,6 +42,23 @@
     </div>
   </div>
 
+  <!-- Inicialização Firebase -->
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAmIKqT6FKAIOJXvBMop89kATeKUsy4yR0",
+      authDomain: "rifa-stanley.firebaseapp.com",
+      projectId: "rifa-stanley",
+      storageBucket: "rifa-stanley.firebasestorage.app",
+      messagingSenderId: "811838072733",
+      appId: "1:811838072733:web:c380ce75a40d1b90ca3174",
+      measurementId: "G-L9CQJX7ZNJ"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+  </script>
+
+  <!-- Script principal -->
   <script src="script.js"></script>
 </body>
 </html>
