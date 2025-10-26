@@ -8,7 +8,7 @@
 </head>
 <body>
   <header>
-    <h1>🎁 Rifa - IAM - Super Stanley 7,5 Litros verde</h1>
+    <h1>🎁 Rifa Stanley 7,5L Green - PIX</h1>
     <p>1 número = R$ 15,00 | 2 números = R$ 20,00</p>
   </header>
 
@@ -41,6 +41,7 @@
   <!-- Firebase SDK compat -->
   <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-storage-compat.js"></script>
 
   <!-- Inicialização Firebase -->
   <script>
@@ -57,10 +58,12 @@
     try {
       firebase.initializeApp(firebaseConfig);
       window.db = firebase.firestore();
-      console.log("✅ Firebase inicializado com sucesso!");
+      window.storage = firebase.storage();
+      console.log("✅ Firebase + Storage inicializados com sucesso!");
     } catch (e) {
       console.warn("⚠️ Erro ao inicializar Firebase (modo local):", e);
       window.db = null;
+      window.storage = null;
     }
   </script>
 

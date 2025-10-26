@@ -4,12 +4,10 @@
 const grid = document.getElementById('grid');
 const totalNumeros = 250;
 
-// Função para formatar números com 3 dígitos (001, 002...)
 function formatNumero(n) {
   return n.toString().padStart(3, '0');
 }
 
-// Gera os botões da rifa
 for (let i = 1; i <= totalNumeros; i++) {
   const numeroFormatado = formatNumero(i);
   const btn = document.createElement('button');
@@ -40,18 +38,36 @@ function fecharModal() {
 // ========================
 // FIREBASE FALLBACK
 // ========================
-let useFirebase = typeof db !== 'undefined' && db !== null;
+let useFirebase = typeof db !== 'undefined' && db !== null && typeof storage !== 'undefined' && storage !== null;
 console.log("🔥 Firebase ativo?", useFirebase);
 
 // ========================
-// FORM DE RESERVA
+// FORM DE RESERVA COM UPLOAD
 // ========================
 document.getElementById('reserva-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const numero = numeroSelecionadoInput.value;
   const nome = document.getElementById('nome').value;
   const whatsapp = document.getElementById('whatsapp').value;
+  const file = document.getElementById('comprovante').files[0];
 
+  let comprovanteURL = null;
+
+  // 📤 Upload no Storage
+  if (useFirebase && file) {
+    try {
+      const storageRef = storage.ref(`comprovantes/${numero}_${Date.now()}_${file.name}`);
+      await storageRef.put(file);
+      comprovanteURL = await storageRef.getDownloadURL();
+      console.log("📎 Comprovante enviado:", comprovanteURL);
+    } catch (err) {
+      console.error("❌ Erro ao enviar comprovante:", err);
+      alert("Falha ao enviar o comprovante. Tente novamente.");
+      return;
+    }
+  }
+
+  // 📝 Salvar no Firestore
   if (useFirebase) {
     try {
       const docRef = db.doc("rifa/numeros");
@@ -67,6 +83,7 @@ document.getElementById('reserva-form').addEventListener('submit', async (e) => 
       data[numero] = {
         nome,
         whatsapp,
+        comprovante: comprovanteURL,
         status: "reservado",
         timestamp: new Date().toISOString()
       };
@@ -74,7 +91,7 @@ document.getElementById('reserva-form').addEventListener('submit', async (e) => 
       await docRef.set(data);
       console.log(`📌 Número ${numero} reservado no Firebase para ${nome}`);
     } catch (err) {
-      console.error("🔥 Erro ao salvar no Firebase:", err);
+      console.error("🔥 Erro ao salvar no Firestore:", err);
       alert("Falha ao salvar no servidor. Sua reserva local foi registrada.");
     }
   }
@@ -91,7 +108,7 @@ document.getElementById('reserva-form').addEventListener('submit', async (e) => 
 });
 
 // ========================
-// ATUALIZAÇÃO EM TEMPO REAL COM FIREBASE
+// ATUALIZAÇÃO EM TEMPO REAL
 // ========================
 if (useFirebase) {
   db.doc("rifa/numeros").onSnapshot((docSnap) => {
