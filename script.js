@@ -1,35 +1,17 @@
-console.log("✅ script.js carregado com sucesso!");
-document.body.style.backgroundColor = "#f0f0f0";
+// ✅ Confirma que o script foi carregado
+console.log("✅ script.js compat carregado com sucesso!");
 
+// 🔥 Usa o Firebase já carregado no HTML
+const db = firebase.firestore();
 
-// ✅ Inicialização Firebase
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
-import { getFirestore, doc, setDoc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
-
-// ⚙️ Configuração do seu projeto Firebase
-const firebaseConfig = {
-  apiKey: "AIzaSyAmIKqT6FKAlOJXvBMop89kATekUsy4yR0",
-  authDomain: "rifa-stanley.firebaseapp.com",
-  projectId: "rifa-stanley",
-  storageBucket: "rifa-stanley.firebasestorage.app",
-  messagingSenderId: "811838072733",
-  appId: "1:811838072733:web:c380ce75a40d1b90ca3174",
-  measurementId: "G-L9C0JX7ZNJ"
-};
-
-// 🚀 Inicializa o Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-console.log("✅ script.js carregado com Firebase!");
-
-// 📲 Aguarda DOM carregar
+// ============================
+// 📲 Inicializa grade de números
+// ============================
 document.addEventListener('DOMContentLoaded', () => {
-  console.log("⏳ DOM carregado, iniciando grade...");
+  console.log("📲 DOM carregado!");
   const grid = document.getElementById('grid');
   const totalNumeros = 250;
 
-  // Cria os botões dos números
   for (let i = 1; i <= totalNumeros; i++) {
     const numero = i.toString().padStart(3, '0');
     const btn = document.createElement('button');
@@ -40,9 +22,11 @@ document.addEventListener('DOMContentLoaded', () => {
     grid.appendChild(btn);
   }
 
-  // 🔄 Listener em tempo real no Firestore
-  onSnapshot(doc(db, "rifa", "numeros"), (docSnap) => {
-    if (docSnap.exists()) {
+  // ============================
+  // 🟡 Listener em tempo real no Firestore
+  // ============================
+  db.doc("rifa/numeros").onSnapshot((docSnap) => {
+    if (docSnap.exists) {
       const data = docSnap.data();
       Object.keys(data).forEach(numero => {
         const info = data[numero];
@@ -64,51 +48,45 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// 🟢 Abre modal
+// ============================
+// 🟢 Funções do Modal
+// ============================
 function abrirModal(numero) {
-  const modal = document.getElementById('modal');
-  const numeroInput = document.getElementById('numero-selecionado');
-  numeroInput.value = numero;
-  modal.classList.remove('hidden');
+  document.getElementById('numero-selecionado').value = numero;
+  document.getElementById('modal').classList.remove('hidden');
 }
 
-// ❌ Fecha modal
 function fecharModal() {
-  const modal = document.getElementById('modal');
-  modal.classList.add('hidden');
+  document.getElementById('modal').classList.add('hidden');
 }
 
-// 📝 Reserva número no Firestore
+// ============================
+// 📝 Reserva do número
+// ============================
 document.getElementById('reserva-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const numero = document.getElementById('numero-selecionado').value;
   const nome = document.getElementById('nome').value;
   const whatsapp = document.getElementById('whatsapp').value;
 
-  const numeroDoc = doc(db, "rifa", "numeros");
-  const docSnap = await getDoc(numeroDoc);
+  const docRef = db.doc("rifa/numeros");
+  const snap = await docRef.get();
+  let data = snap.exists ? snap.data() : {};
 
-  let numerosData = {};
-  if (docSnap.exists()) {
-    numerosData = docSnap.data();
-  }
-
-  // ⚠️ Verifica se número já foi reservado
-  if (numerosData[numero] && numerosData[numero].status !== 'disponivel') {
+  if (data[numero] && data[numero].status !== 'disponivel') {
     alert("Esse número já foi reservado ou vendido.");
     fecharModal();
     return;
   }
 
-  numerosData[numero] = {
-    nome: nome,
-    whatsapp: whatsapp,
+  data[numero] = {
+    nome,
+    whatsapp,
     status: "reservado",
     timestamp: new Date().toISOString()
   };
 
-  await setDoc(numeroDoc, numerosData);
-  console.log(`📌 Número ${numero} reservado para ${nome} (${whatsapp})`);
-
+  await docRef.set(data);
+  console.log(`📌 Número ${numero} reservado para ${nome}`);
   fecharModal();
 });
