@@ -1,8 +1,11 @@
-// ========== GERADOR DE NÚMEROS E RESERVAS ========== //
+// ========== INTEGRAÇÃO FIREBASE FIRESTORE ========== //
 const grid = document.getElementById('grid');
 const modal = document.getElementById('modal');
 const form = document.getElementById('reserva-form');
 const numeroSelecionadoInput = document.getElementById('numero-selecionado');
+
+// Referência ao Firestore
+const reservasRef = firebase.firestore().collection('reservas');
 
 let numeros = [];
 
@@ -15,7 +18,21 @@ for (let i = 1; i <= 250; i++) {
   });
 }
 
-// Renderiza a grade
+// ========== ATUALIZAÇÃO EM TEMPO REAL ========== //
+reservasRef.onSnapshot(snapshot => {
+  snapshot.forEach(doc => {
+    const numero = doc.id;
+    const data = doc.data();
+    const index = numeros.findIndex(n => n.numero === numero);
+    if (index !== -1) {
+      numeros[index].status = data.status;
+      numeros[index].comprador = data.comprador;
+    }
+  });
+  renderGrid();
+});
+
+// ========== RENDERIZA GRADE ========== //
 function renderGrid() {
   grid.innerHTML = '';
   numeros.forEach(n => {
@@ -33,20 +50,19 @@ function renderGrid() {
 
 renderGrid();
 
-// Abre modal de reserva
+// ========== MODAL ========== //
 function abrirModal(numero) {
   numeroSelecionadoInput.value = numero;
   modal.classList.remove('hidden');
 }
 
-// Fecha modal
 function fecharModal() {
   modal.classList.add('hidden');
   form.reset();
 }
 
-// Salva reserva localmente (pode ser depois no Firebase)
-form.addEventListener('submit', (e) => {
+// ========== RESERVAR NÚMERO NO FIRESTORE ========== //
+form.addEventListener('submit', async (e) => {
   e.preventDefault();
   const numero = numeroSelecionadoInput.value;
   const nome = document.getElementById('nome').value;
@@ -58,14 +74,16 @@ form.addEventListener('submit', (e) => {
     return;
   }
 
-  const index = numeros.findIndex(n => n.numero === numero);
-  if (index !== -1) {
-    numeros[index].status = 'reservado';
-    numeros[index].comprador = { nome, whatsapp, arquivoNome: arquivo.name };
-    renderGrid();
+  try {
+    await reservasRef.doc(numero).set({
+      status: 'reservado',
+      comprador: { nome, whatsapp, arquivoNome: arquivo.name },
+      timestamp: new Date()
+    });
     fecharModal();
     alert(`Número ${numero} reservado com sucesso!`);
+  } catch (error) {
+    alert('Erro ao reservar número. Tente novamente.');
+    console.error(error);
   }
 });
-
-// ========== NO FUTURO: INTEGRAR COM FIREBASE PARA SALVAR ONLINE ==========
