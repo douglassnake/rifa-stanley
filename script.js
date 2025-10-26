@@ -136,3 +136,60 @@ if (useFirebase) {
     }
   });
 }
+
+// ========================
+// COPIAR PIX
+// ========================
+(function(){
+  const copyBtn = document.getElementById('copy-pix');
+  const pixKeyEl = document.getElementById('pix-key');
+  const toast = document.getElementById('pix-toast');
+
+  if (!copyBtn || !pixKeyEl || !toast) return;
+
+  async function showToast(msg = "Chave PIX copiada!") {
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+  }
+
+  async function copyTextToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch (e) {}
+    }
+    try {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.left = '-9999px';
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      const successful = document.execCommand('copy');
+      document.body.removeChild(textarea);
+      return successful;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  copyBtn.addEventListener('click', async () => {
+    const chave = pixKeyEl.textContent.trim();
+    const ok = await copyTextToClipboard(chave);
+    if (ok) {
+      showToast('Chave PIX copiada!');
+      const original = copyBtn.textContent;
+      copyBtn.textContent = 'Copiado ✅';
+      copyBtn.disabled = true;
+      setTimeout(() => {
+        copyBtn.textContent = original;
+        copyBtn.disabled = false;
+      }, 1800);
+    } else {
+      alert('Não foi possível copiar automaticamente. Selecione e copie manualmente: ' + chave);
+    }
+  });
+})();

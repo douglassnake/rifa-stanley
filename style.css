@@ -27,6 +27,41 @@ p {
   font-size: 16px;
 }
 
+/* ======== BOTÃO COPIAR PIX ======== */
+.copy-btn {
+  background:#1a73e8;
+  color:#fff;
+  border:none;
+  padding:6px 10px;
+  border-radius:6px;
+  cursor:pointer;
+  font-weight:600;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+}
+.copy-btn:active { transform: translateY(1px); }
+
+/* Toast (mensagem de confirmação) */
+.pix-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(12px);
+  background: rgba(0,0,0,0.85);
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 240ms ease, transform 240ms ease;
+  z-index: 2000;
+}
+.pix-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
+
 /* ======== GRADE DE NÚMEROS ======== */
 .grid {
   display: grid;

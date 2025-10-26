@@ -5,13 +5,48 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Rifa Stanley 7,5L</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    .copy-btn {
+      background:#1a73e8;
+      color:#fff;
+      border:none;
+      padding:6px 10px;
+      border-radius:6px;
+      cursor:pointer;
+      font-weight:600;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    }
+    .copy-btn:active { transform: translateY(1px); }
+
+    .pix-toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(12px);
+      background: rgba(0,0,0,0.85);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 240ms ease, transform 240ms ease;
+      z-index: 2000;
+    }
+    .pix-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+      pointer-events: auto;
+    }
+  </style>
 </head>
 <body>
   <header>
-    <h1>🎁 Rifa - IAM</h1>
-    <p>Garrafa Stanley 7,5 Litros Verde</p>
-    <p>PIX - douglas.gmor@gmail.com</p>
-    <p>1 número = R$ 15,00 | 2 números = R$ 20,00</p>
+    <h1>🎁 Rifa Stanley 7,5L Green</h1>
+    <p style="display:flex;align-items:center;gap:8px;">
+      PIX - <strong id="pix-key">douglas.gmor@gmail.com</strong>
+      <button id="copy-pix" class="copy-btn" type="button" aria-label="Copiar chave PIX">📋 Copiar PIX</button>
+    </p>
   </header>
 
   <main>
@@ -40,6 +75,9 @@
     </div>
   </div>
 
+  <!-- Toast para PIX -->
+  <div id="pix-toast" class="pix-toast" aria-hidden="true">Chave PIX copiada!</div>
+
   <!-- Firebase SDK compat -->
   <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
@@ -67,6 +105,61 @@
       window.db = null;
       window.storage = null;
     }
+
+    // --- Copiar PIX ---
+    (function(){
+      const copyBtn = document.getElementById('copy-pix');
+      const pixKeyEl = document.getElementById('pix-key');
+      const toast = document.getElementById('pix-toast');
+
+      if (!copyBtn || !pixKeyEl || !toast) return;
+
+      async function showToast(msg = "Chave PIX copiada!") {
+        toast.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2500);
+      }
+
+      async function copyTextToClipboard(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          try {
+            await navigator.clipboard.writeText(text);
+            return true;
+          } catch (e) {}
+        }
+        try {
+          const textarea = document.createElement('textarea');
+          textarea.value = text;
+          textarea.style.position = 'fixed';
+          textarea.style.left = '-9999px';
+          document.body.appendChild(textarea);
+          textarea.focus();
+          textarea.select();
+          const successful = document.execCommand('copy');
+          document.body.removeChild(textarea);
+          return successful;
+        } catch (e) {
+          return false;
+        }
+      }
+
+      copyBtn.addEventListener('click', async () => {
+        const chave = pixKeyEl.textContent.trim();
+        const ok = await copyTextToClipboard(chave);
+        if (ok) {
+          showToast('Chave PIX copiada!');
+          const original = copyBtn.textContent;
+          copyBtn.textContent = 'Copiado ✅';
+          copyBtn.disabled = true;
+          setTimeout(() => {
+            copyBtn.textContent = original;
+            copyBtn.disabled = false;
+          }, 1800);
+        } else {
+          alert('Não foi possível copiar automaticamente. Selecione e copie manualmente: ' + chave);
+        }
+      });
+    })();
   </script>
 
   <!-- Script principal -->
