@@ -3,98 +3,117 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Painel de Gestão - Rifa Stanley</title>
+  <title>Painel de Gestão - Rifa</title>
   <link rel="stylesheet" href="style.css" />
   <style>
     body {
-      background: #f7f7f7;
-      padding: 20px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    header {
+      text-align: center;
+      background-color: #1a1a1a;
+      color: white;
+      padding: 20px 10px;
+      width: 100%;
     }
     h1 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    #login {
-      max-width: 300px;
-      margin: 100px auto;
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    #painel {
-      display: none;
+      margin: 0;
+      font-size: 22px;
     }
 
-    /* 📱 TABELA RESPONSIVA */
     .table-container {
       width: 100%;
+      display: block;
       overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch; /* ✅ suaviza rolagem no iPhone */
+      padding: 10px;
+      box-sizing: border-box;
     }
 
     table {
       width: 100%;
-      min-width: 600px;
+      min-width: 720px; /* largura mínima para evitar corte */
       border-collapse: collapse;
-      margin-top: 20px;
     }
+
     th, td {
       padding: 10px;
       text-align: left;
       border-bottom: 1px solid #ccc;
       white-space: nowrap;
     }
+
     th {
       background: #333;
       color: white;
     }
-    tr:hover {
-      background: #f0f0f0;
-    }
-    button.acao {
-      padding: 5px 10px;
+
+    .actions button {
       margin-right: 5px;
-      cursor: pointer;
+      padding: 6px 10px;
       border: none;
       border-radius: 4px;
+      cursor: pointer;
     }
-    .pago { background: #4caf50; color: white; }
-    .cancelar { background: #f44336; color: white; }
+
+    .btn-pago {
+      background: #4CAF50;
+      color: white;
+    }
+
+    .btn-cancelar {
+      background: #f44336;
+      color: white;
+    }
+
+    .btn-atualizar {
+      background: #1a73e8;
+      color: white;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 15px 0;
+    }
+
+    @media (max-width: 600px) {
+      h1 { font-size: 18px; }
+    }
   </style>
 </head>
 <body>
-  <div id="login">
-    <h2>🔐 Acesso ao Painel</h2>
-    <p>Digite a senha para acessar:</p>
-    <input type="password" id="senha" placeholder="Senha de acesso" style="width:100%;padding:8px;" />
-    <button onclick="verificarSenha()" style="margin-top:10px;width:100%;padding:10px;">Entrar</button>
+  <header>
+    <h1>📊 Painel de Gestão da Rifa</h1>
+  </header>
+
+  <button class="btn-atualizar" onclick="carregarReservas()">🔄 Atualizar</button>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Número</th>
+          <th>Nome</th>
+          <th>WhatsApp</th>
+          <th>Status</th>
+          <th>Comprovante</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tabela-corpo"></tbody>
+    </table>
   </div>
 
-  <div id="painel">
-    <h1>📊 Painel de Gestão - Rifa Stanley</h1>
-    <button onclick="carregarDados()">🔄 Atualizar Dados</button>
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Número</th>
-            <th>Nome</th>
-            <th>WhatsApp</th>
-            <th>Status</th>
-            <th>Comprovante</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody id="tabela-corpo"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Firebase SDKs -->
+  <!-- Firebase SDK compat -->
   <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-storage-compat.js"></script>
 
   <script>
     const firebaseConfig = {
@@ -109,72 +128,58 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    const SENHA_CORRETA = "1234"; // 👈 Altere sua senha aqui
+    async function carregarReservas() {
+      const tabela = document.getElementById('tabela-corpo');
+      tabela.innerHTML = '';
+      const docSnap = await db.doc("rifa/numeros").get();
+      if (docSnap.exists) {
+        const data = docSnap.data();
+        Object.keys(data).forEach(numero => {
+          const info = data[numero];
+          const tr = document.createElement('tr');
 
-    function verificarSenha() {
-      const senhaDigitada = document.getElementById('senha').value;
-      if (senhaDigitada === SENHA_CORRETA) {
-        document.getElementById('login').style.display = 'none';
-        document.getElementById('painel').style.display = 'block';
-        carregarDados();
-      } else {
-        alert('Senha incorreta');
-      }
-    }
-
-    async function carregarDados() {
-      const tabelaCorpo = document.getElementById('tabela-corpo');
-      tabelaCorpo.innerHTML = "<tr><td colspan='6'>Carregando...</td></tr>";
-
-      const docRef = db.doc("rifa/numeros");
-      const snap = await docRef.get();
-      if (!snap.exists) {
-        tabelaCorpo.innerHTML = "<tr><td colspan='6'>Nenhum dado encontrado.</td></tr>";
-        return;
-      }
-      const data = snap.data();
-      const numeros = Object.keys(data).sort((a,b) => Number(a) - Number(b));
-      tabelaCorpo.innerHTML = "";
-      numeros.forEach(numero => {
-        const item = data[numero];
-        const linkComp = item.comprovante ? `<a href="${item.comprovante}" target="_blank">📎 Ver</a>` : "-";
-        const row = `
-          <tr>
+          tr.innerHTML = `
             <td>${numero}</td>
-            <td>${item.nome || "-"}</td>
-            <td>${item.whatsapp || "-"}</td>
-            <td>${item.status || "disponivel"}</td>
-            <td>${linkComp}</td>
-            <td>
-              <button class="acao pago" onclick="marcarPago('${numero}')">✅ Pago</button>
-              <button class="acao cancelar" onclick="cancelarReserva('${numero}')">❌ Cancelar</button>
+            <td>${info.nome || '-'}</td>
+            <td>${info.whatsapp || '-'}</td>
+            <td>${info.status || '-'}</td>
+            <td>${info.comprovante ? `<a href="${info.comprovante}" target="_blank">📎 Ver</a>` : '-'}</td>
+            <td class="actions">
+              <button class="btn-pago" onclick="marcarPago('${numero}')">Pago</button>
+              <button class="btn-cancelar" onclick="cancelarReserva('${numero}')">Cancelar</button>
             </td>
-          </tr>`;
-        tabelaCorpo.insertAdjacentHTML('beforeend', row);
-      });
+          `;
+
+          tabela.appendChild(tr);
+        });
+      }
     }
 
     async function marcarPago(numero) {
       const docRef = db.doc("rifa/numeros");
       const snap = await docRef.get();
-      if (!snap.exists) return;
-      let data = snap.data();
-      if (!data[numero]) return;
-      data[numero].status = "vendido";
-      await docRef.set(data);
-      carregarDados();
+      if (snap.exists) {
+        let data = snap.data();
+        if (data[numero]) {
+          data[numero].status = 'vendido';
+          await docRef.set(data);
+          carregarReservas();
+        }
+      }
     }
 
     async function cancelarReserva(numero) {
-      if (!confirm("Tem certeza que deseja cancelar a reserva do número " + numero + "?")) return;
       const docRef = db.doc("rifa/numeros");
       const snap = await docRef.get();
-      if (!snap.exists) return;
-      let data = snap.data();
-      delete data[numero];
-      await docRef.set(data);
-      carregarDados();
+      if (snap.exists) {
+        let data = snap.data();
+        delete data[numero];
+        await docRef.set(data);
+        carregarReservas();
+      }
     }
+
+    window.onload = carregarReservas;
   </script>
 </body>
 </html>
