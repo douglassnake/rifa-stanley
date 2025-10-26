@@ -25,8 +25,17 @@
     #painel {
       display: none;
     }
+
+    /* 📱 TABELA RESPONSIVA */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
     table {
       width: 100%;
+      min-width: 600px;
       border-collapse: collapse;
       margin-top: 20px;
     }
@@ -34,6 +43,7 @@
       padding: 10px;
       text-align: left;
       border-bottom: 1px solid #ccc;
+      white-space: nowrap;
     }
     th {
       background: #333;
@@ -64,19 +74,21 @@
   <div id="painel">
     <h1>📊 Painel de Gestão - Rifa Stanley</h1>
     <button onclick="carregarDados()">🔄 Atualizar Dados</button>
-    <table>
-      <thead>
-        <tr>
-          <th>Número</th>
-          <th>Nome</th>
-          <th>WhatsApp</th>
-          <th>Status</th>
-          <th>Comprovante</th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody id="tabela-corpo"></tbody>
-    </table>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Número</th>
+            <th>Nome</th>
+            <th>WhatsApp</th>
+            <th>Status</th>
+            <th>Comprovante</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tabela-corpo"></tbody>
+      </table>
+    </div>
   </div>
 
   <!-- Firebase SDKs -->
@@ -97,7 +109,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    const SENHA_CORRETA = "aDmin"; // 👈 Defina sua senha aqui
+    const SENHA_CORRETA = "1234"; // 👈 Altere sua senha aqui
 
     function verificarSenha() {
       const senhaDigitada = document.getElementById('senha').value;
