@@ -1,71 +1,121 @@
-// ========== GERADOR DE NÚMEROS E RESERVAS ========== //
+// ========================
+// GERAÇÃO DA GRADE DE NÚMEROS
+// ========================
 const grid = document.getElementById('grid');
+const totalNumeros = 250;
+
+// Função para formatar números com 3 dígitos (001, 002...)
+function formatNumero(n) {
+  return n.toString().padStart(3, '0');
+}
+
+// Gera os botões da rifa
+for (let i = 1; i <= totalNumeros; i++) {
+  const numeroFormatado = formatNumero(i);
+  const btn = document.createElement('button');
+  btn.id = `num-${numeroFormatado}`;
+  btn.textContent = numeroFormatado;
+  btn.classList.add('numero', 'disponivel');
+  btn.addEventListener('click', () => abrirModal(numeroFormatado));
+  grid.appendChild(btn);
+}
+
+// ========================
+// MODAL DE RESERVA
+// ========================
 const modal = document.getElementById('modal');
-const form = document.getElementById('reserva-form');
 const numeroSelecionadoInput = document.getElementById('numero-selecionado');
 
-let numeros = [];
-
-// Cria 250 números disponíveis
-for (let i = 1; i <= 250; i++) {
-  numeros.push({
-    numero: i.toString().padStart(3, '0'),
-    status: 'disponivel',
-    comprador: null
-  });
-}
-
-// Renderiza a grade
-function renderGrid() {
-  grid.innerHTML = '';
-  numeros.forEach(n => {
-    const div = document.createElement('div');
-    div.classList.add('numero', n.status);
-    div.textContent = n.numero;
-
-    if (n.status === 'disponivel') {
-      div.addEventListener('click', () => abrirModal(n.numero));
-    }
-
-    grid.appendChild(div);
-  });
-}
-
-renderGrid();
-
-// Abre modal de reserva
 function abrirModal(numero) {
   numeroSelecionadoInput.value = numero;
   modal.classList.remove('hidden');
 }
 
-// Fecha modal
 function fecharModal() {
   modal.classList.add('hidden');
-  form.reset();
+  numeroSelecionadoInput.value = '';
+  document.getElementById('reserva-form').reset();
 }
 
-// Salva reserva localmente (pode ser depois no Firebase)
-form.addEventListener('submit', (e) => {
+// ========================
+// FIREBASE FALLBACK
+// ========================
+let useFirebase = typeof db !== 'undefined' && db !== null;
+console.log("🔥 Firebase ativo?", useFirebase);
+
+// ========================
+// FORM DE RESERVA
+// ========================
+document.getElementById('reserva-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const numero = numeroSelecionadoInput.value;
   const nome = document.getElementById('nome').value;
   const whatsapp = document.getElementById('whatsapp').value;
-  const arquivo = document.getElementById('comprovante').files[0];
 
-  if (!arquivo) {
-    alert('Por favor, envie o comprovante de pagamento.');
-    return;
+  if (useFirebase) {
+    try {
+      const docRef = db.doc("rifa/numeros");
+      const snap = await docRef.get();
+      let data = snap.exists ? snap.data() : {};
+
+      if (data[numero] && data[numero].status !== 'disponivel') {
+        alert("Esse número já foi reservado ou vendido.");
+        fecharModal();
+        return;
+      }
+
+      data[numero] = {
+        nome,
+        whatsapp,
+        status: "reservado",
+        timestamp: new Date().toISOString()
+      };
+
+      await docRef.set(data);
+      console.log(`📌 Número ${numero} reservado no Firebase para ${nome}`);
+    } catch (err) {
+      console.error("🔥 Erro ao salvar no Firebase:", err);
+      alert("Falha ao salvar no servidor. Sua reserva local foi registrada.");
+    }
   }
 
-  const index = numeros.findIndex(n => n.numero === numero);
-  if (index !== -1) {
-    numeros[index].status = 'reservado';
-    numeros[index].comprador = { nome, whatsapp, arquivoNome: arquivo.name };
-    renderGrid();
-    fecharModal();
-    alert(`Número ${numero} reservado com sucesso!`);
+  // Atualiza localmente
+  const btn = document.getElementById(`num-${numero}`);
+  if (btn) {
+    btn.classList.remove('disponivel');
+    btn.classList.add('reservado');
+    btn.disabled = true;
   }
+
+  fecharModal();
 });
 
-// ========== NO FUTURO: INTEGRAR COM FIREBASE PARA SALVAR ONLINE ==========
+// ========================
+// ATUALIZAÇÃO EM TEMPO REAL COM FIREBASE
+// ========================
+if (useFirebase) {
+  db.doc("rifa/numeros").onSnapshot((docSnap) => {
+    if (docSnap.exists) {
+      const data = docSnap.data();
+      Object.keys(data).forEach(numero => {
+        const info = data[numero];
+        const btn = document.getElementById(`num-${numero}`);
+        if (btn) {
+          if (info.status === 'reservado') {
+            btn.classList.remove('disponivel');
+            btn.classList.add('reservado');
+            btn.disabled = true;
+          } else if (info.status === 'vendido') {
+            btn.classList.remove('disponivel');
+            btn.classList.add('vendido');
+            btn.disabled = true;
+          } else {
+            btn.classList.remove('reservado', 'vendido');
+            btn.classList.add('disponivel');
+            btn.disabled = false;
+          }
+        }
+      });
+    }
+  });
+}

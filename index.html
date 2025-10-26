@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Rifa Stanley 7,5L</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header>
@@ -20,15 +20,15 @@
     <div class="modal-content">
       <h2>Reservar Número</h2>
       <form id="reserva-form">
-        <input type="hidden" id="numero-selecionado" name="numero">
+        <input type="hidden" id="numero-selecionado" name="numero" />
         <label>Nome:</label>
-        <input type="text" id="nome" required>
+        <input type="text" id="nome" required />
 
         <label>WhatsApp:</label>
-        <input type="text" id="whatsapp" required>
+        <input type="text" id="whatsapp" required />
 
         <label>Comprovante (imagem ou PDF):</label>
-        <input type="file" id="comprovante" accept="image/*,.pdf" required>
+        <input type="file" id="comprovante" accept="image/*,.pdf" required />
 
         <div class="modal-actions">
           <button type="button" onclick="fecharModal()">Cancelar</button>
@@ -38,6 +38,33 @@
     </div>
   </div>
 
+  <!-- Firebase SDK compat -->
+  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
+
+  <!-- Inicialização Firebase -->
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAmIKqT6FKAIOJXvBMop89kATeKUsy4yR0",
+      authDomain: "rifa-stanley.firebaseapp.com",
+      projectId: "rifa-stanley",
+      storageBucket: "rifa-stanley.firebasestorage.app",
+      messagingSenderId: "811838072733",
+      appId: "1:811838072733:web:c380ce75a40d1b90ca3174",
+      measurementId: "G-L9CQJX7ZNJ"
+    };
+
+    try {
+      firebase.initializeApp(firebaseConfig);
+      window.db = firebase.firestore();
+      console.log("✅ Firebase inicializado com sucesso!");
+    } catch (e) {
+      console.warn("⚠️ Erro ao inicializar Firebase (modo local):", e);
+      window.db = null;
+    }
+  </script>
+
+  <!-- Script principal -->
   <script src="script.js"></script>
 </body>
 </html>
