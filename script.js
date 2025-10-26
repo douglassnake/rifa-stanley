@@ -1,3 +1,7 @@
+console.log("✅ script.js carregado com sucesso!");
+document.body.style.backgroundColor = "#f0f0f0";
+
+
 // ✅ Inicialização Firebase
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
 import { getFirestore, doc, setDoc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
