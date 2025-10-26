@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel de Gestão - Rifa Stanley</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      background: #f7f7f7;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    #login {
+      max-width: 300px;
+      margin: 100px auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    #painel {
+      display: none;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid #ccc;
+    }
+    th {
+      background: #333;
+      color: white;
+    }
+    tr:hover {
+      background: #f0f0f0;
+    }
+    button.acao {
+      padding: 5px 10px;
+      margin-right: 5px;
+      cursor: pointer;
+      border: none;
+      border-radius: 4px;
+    }
+    .pago { background: #4caf50; color: white; }
+    .cancelar { background: #f44336; color: white; }
+  </style>
+</head>
+<body>
+  <div id="login">
+    <h2>🔐 Acesso ao Painel</h2>
+    <p>Digite a senha para acessar:</p>
+    <input type="password" id="senha" placeholder="Senha de acesso" style="width:100%;padding:8px;" />
+    <button onclick="verificarSenha()" style="margin-top:10px;width:100%;padding:10px;">Entrar</button>
+  </div>
+
+  <div id="painel">
+    <h1>📊 Painel de Gestão - Rifa Stanley</h1>
+    <button onclick="carregarDados()">🔄 Atualizar Dados</button>
+    <table>
+      <thead>
+        <tr>
+          <th>Número</th>
+          <th>Nome</th>
+          <th>WhatsApp</th>
+          <th>Status</th>
+          <th>Comprovante</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tabela-corpo"></tbody>
+    </table>
+  </div>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-storage-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAmIKqT6FKAIOJXvBMop89kATeKUsy4yR0",
+      authDomain: "rifa-stanley.firebaseapp.com",
+      projectId: "rifa-stanley",
+      storageBucket: "rifa-stanley.firebasestorage.app",
+      messagingSenderId: "811838072733",
+      appId: "1:811838072733:web:c380ce75a40d1b90ca3174",
+      measurementId: "G-L9CQJX7ZNJ"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const SENHA_CORRETA = "aDmin"; // 👈 Defina sua senha aqui
+
+    function verificarSenha() {
+      const senhaDigitada = document.getElementById('senha').value;
+      if (senhaDigitada === SENHA_CORRETA) {
+        document.getElementById('login').style.display = 'none';
+        document.getElementById('painel').style.display = 'block';
+        carregarDados();
+      } else {
+        alert('Senha incorreta');
+      }
+    }
+
+    async function carregarDados() {
+      const tabelaCorpo = document.getElementById('tabela-corpo');
+      tabelaCorpo.innerHTML = "<tr><td colspan='6'>Carregando...</td></tr>";
+
+      const docRef = db.doc("rifa/numeros");
+      const snap = await docRef.get();
+      if (!snap.exists) {
+        tabelaCorpo.innerHTML = "<tr><td colspan='6'>Nenhum dado encontrado.</td></tr>";
+        return;
+      }
+      const data = snap.data();
+      const numeros = Object.keys(data).sort((a,b) => Number(a) - Number(b));
+      tabelaCorpo.innerHTML = "";
+      numeros.forEach(numero => {
+        const item = data[numero];
+        const linkComp = item.comprovante ? `<a href="${item.comprovante}" target="_blank">📎 Ver</a>` : "-";
+        const row = `
+          <tr>
+            <td>${numero}</td>
+            <td>${item.nome || "-"}</td>
+            <td>${item.whatsapp || "-"}</td>
+            <td>${item.status || "disponivel"}</td>
+            <td>${linkComp}</td>
+            <td>
+              <button class="acao pago" onclick="marcarPago('${numero}')">✅ Pago</button>
+              <button class="acao cancelar" onclick="cancelarReserva('${numero}')">❌ Cancelar</button>
+            </td>
+          </tr>`;
+        tabelaCorpo.insertAdjacentHTML('beforeend', row);
+      });
+    }
+
+    async function marcarPago(numero) {
+      const docRef = db.doc("rifa/numeros");
+      const snap = await docRef.get();
+      if (!snap.exists) return;
+      let data = snap.data();
+      if (!data[numero]) return;
+      data[numero].status = "vendido";
+      await docRef.set(data);
+      carregarDados();
+    }
+
+    async function cancelarReserva(numero) {
+      if (!confirm("Tem certeza que deseja cancelar a reserva do número " + numero + "?")) return;
+      const docRef = db.doc("rifa/numeros");
+      const snap = await docRef.get();
+      if (!snap.exists) return;
+      let data = snap.data();
+      delete data[numero];
+      await docRef.set(data);
+      carregarDados();
+    }
+  </script>
+</body>
+</html>
