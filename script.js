@@ -1,89 +1,56 @@
-// ========== INTEGRAÇÃO FIREBASE FIRESTORE ========== //
-const grid = document.getElementById('grid');
-const modal = document.getElementById('modal');
-const form = document.getElementById('reserva-form');
-const numeroSelecionadoInput = document.getElementById('numero-selecionado');
+// Confirma se o script foi carregado
+console.log("✅ script.js carregado com sucesso!");
 
-// Referência ao Firestore
-const reservasRef = firebase.firestore().collection('reservas');
+// Aguarda a página carregar completamente
+document.addEventListener('DOMContentLoaded', () => {
+  console.log("⏳ DOM carregado, iniciando grade...");
 
-let numeros = [];
+  const grid = document.getElementById('grid');
+  const totalNumeros = 250;
 
-// Cria 250 números disponíveis
-for (let i = 1; i <= 250; i++) {
-  numeros.push({
-    numero: i.toString().padStart(3, '0'),
-    status: 'disponivel',
-    comprador: null
-  });
-}
-
-// ========== ATUALIZAÇÃO EM TEMPO REAL ========== //
-reservasRef.onSnapshot(snapshot => {
-  snapshot.forEach(doc => {
-    const numero = doc.id;
-    const data = doc.data();
-    const index = numeros.findIndex(n => n.numero === numero);
-    if (index !== -1) {
-      numeros[index].status = data.status;
-      numeros[index].comprador = data.comprador;
-    }
-  });
-  renderGrid();
+  // Cria os 250 botões
+  for (let i = 1; i <= totalNumeros; i++) {
+    const numero = i.toString().padStart(3, '0');
+    const btn = document.createElement('button');
+    btn.textContent = numero;
+    btn.className = 'numero';
+    btn.addEventListener('click', () => abrirModal(numero));
+    grid.appendChild(btn);
+  }
 });
 
-// ========== RENDERIZA GRADE ========== //
-function renderGrid() {
-  grid.innerHTML = '';
-  numeros.forEach(n => {
-    const div = document.createElement('div');
-    div.classList.add('numero', n.status);
-    div.textContent = n.numero;
-
-    if (n.status === 'disponivel') {
-      div.addEventListener('click', () => abrirModal(n.numero));
-    }
-
-    grid.appendChild(div);
-  });
-}
-
-renderGrid();
-
-// ========== MODAL ========== //
+// Função para abrir modal
 function abrirModal(numero) {
-  numeroSelecionadoInput.value = numero;
+  console.log(`🟢 Número ${numero} selecionado`);
+  const modal = document.getElementById('modal');
+  const numeroInput = document.getElementById('numero-selecionado');
+  numeroInput.value = numero;
   modal.classList.remove('hidden');
 }
 
+// Função para fechar modal
 function fecharModal() {
+  const modal = document.getElementById('modal');
   modal.classList.add('hidden');
-  form.reset();
 }
 
-// ========== RESERVAR NÚMERO NO FIRESTORE ========== //
-form.addEventListener('submit', async (e) => {
+// Exemplo de reserva (simulação local)
+document.getElementById('reserva-form').addEventListener('submit', (e) => {
   e.preventDefault();
-  const numero = numeroSelecionadoInput.value;
+  const numero = document.getElementById('numero-selecionado').value;
   const nome = document.getElementById('nome').value;
   const whatsapp = document.getElementById('whatsapp').value;
-  const arquivo = document.getElementById('comprovante').files[0];
 
-  if (!arquivo) {
-    alert('Por favor, envie o comprovante de pagamento.');
-    return;
-  }
+  console.log(`📌 Reserva feita para ${nome} - Número ${numero} - WhatsApp: ${whatsapp}`);
 
-  try {
-    await reservasRef.doc(numero).set({
-      status: 'reservado',
-      comprador: { nome, whatsapp, arquivoNome: arquivo.name },
-      timestamp: new Date()
-    });
-    fecharModal();
-    alert(`Número ${numero} reservado com sucesso!`);
-  } catch (error) {
-    alert('Erro ao reservar número. Tente novamente.');
-    console.error(error);
-  }
+  // Desativa botão
+  const botoes = document.querySelectorAll('.numero');
+  botoes.forEach(btn => {
+    if (btn.textContent === numero) {
+      btn.disabled = true;
+      btn.classList.add('reservado');
+    }
+  });
+
+  fecharModal();
 });
