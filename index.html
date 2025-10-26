@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rifa - Stanley 7,5L</title>
+  <title>Rifa Stanley 7,5L</title>
   <link rel="stylesheet" href="style.css">
 
-  <!-- Firebase SDK (versão compatível com sites estáticos) -->
+  <!-- Firebase SDK (compatível com GitHub Pages) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
 
@@ -31,3 +31,34 @@
     <h1>🎁 Rifa Stanley 7,5L Green</h1>
     <p>1 número = R$ 15,00 | 2 números = R$ 20,00</p>
   </header>
+
+  <main>
+    <div id="grid" class="grid"></div>
+  </main>
+
+  <div id="modal" class="modal hidden">
+    <div class="modal-content">
+      <h2>Reservar Número</h2>
+      <form id="reserva-form">
+        <input type="hidden" id="numero-selecionado" name="numero">
+        <label>Nome:</label>
+        <input type="text" id="nome" required>
+
+        <label>WhatsApp:</label>
+        <input type="text" id="whatsapp" required>
+
+        <label>Comprovante (imagem ou PDF):</label>
+        <input type="file" id="comprovante" accept="image/*,.pdf" required>
+
+        <div class="modal-actions">
+          <button type="button" onclick="fecharModal()">Cancelar</button>
+          <button type="submit">Enviar Reserva</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Carregar script.js por último -->
+  <script src="script.js"></script>
+</body>
+</html>
