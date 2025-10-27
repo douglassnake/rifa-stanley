@@ -1,90 +1,80 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Painel de Gestão - Rifa</title>
-  <link rel="stylesheet" href="style.css" />
   <style>
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f5f5f5;
+      font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      background: #f5f5f5;
     }
     header {
+      background: #1a1a1a;
+      color: #fff;
+      padding: 20px;
       text-align: center;
-      background-color: #1a1a1a;
-      color: white;
-      padding: 20px 10px;
-      width: 100%;
     }
-    h1 {
-      margin: 0;
-      font-size: 22px;
-    }
-
-    .table-container {
-      width: 100%;
-      display: block;
-      overflow-x: auto;
-      overflow-y: hidden;
-      -webkit-overflow-scrolling: touch; /* ✅ suaviza rolagem no iPhone */
-      padding: 10px;
-      box-sizing: border-box;
-    }
-
     table {
-      width: 100%;
-      min-width: 720px; /* largura mínima para evitar corte */
+      width: 90%;
+      margin: 20px auto;
       border-collapse: collapse;
+      background: #fff;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-
     th, td {
       padding: 10px;
-      text-align: left;
-      border-bottom: 1px solid #ccc;
-      white-space: nowrap;
+      border: 1px solid #ddd;
+      text-align: center;
     }
-
     th {
-      background: #333;
-      color: white;
-    }
-
-    .actions button {
-      margin-right: 5px;
-      padding: 6px 10px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    .btn-pago {
-      background: #4CAF50;
-      color: white;
-    }
-
-    .btn-cancelar {
-      background: #f44336;
-      color: white;
-    }
-
-    .btn-atualizar {
       background: #1a73e8;
       color: white;
+    }
+    tr:nth-child(even) {
+      background: #f2f2f2;
+    }
+    /* Modal de senha */
+    .auth-modal {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    .auth-box {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      max-width: 300px;
+      width: 90%;
+    }
+    .auth-box input {
+      width: 100%;
+      padding: 8px;
+      margin-top: 10px;
+      margin-bottom: 10px;
+      box-sizing: border-box;
+    }
+    .auth-box button {
       padding: 8px 12px;
+      background: #1a73e8;
+      color: white;
       border: none;
       border-radius: 6px;
       cursor: pointer;
-      margin: 15px 0;
     }
-
-    @media (max-width: 600px) {
-      h1 { font-size: 18px; }
+    .erro {
+      color: red;
+      font-size: 14px;
+      display: none;
     }
   </style>
 </head>
@@ -93,93 +83,45 @@
     <h1>📊 Painel de Gestão da Rifa</h1>
   </header>
 
-  <button class="btn-atualizar" onclick="carregarReservas()">🔄 Atualizar</button>
+  <!-- Modal de senha -->
+  <div id="auth-modal" class="auth-modal">
+    <div class="auth-box">
+      <h2>🔐 Acesso Restrito</h2>
+      <input type="password" id="senha" placeholder="Digite a senha" />
+      <button onclick="verificarSenha()">Entrar</button>
+      <p id="mensagem-erro" class="erro"></p>
+    </div>
+  </div>
 
-  <div class="table-container">
+  <main>
     <table>
       <thead>
         <tr>
           <th>Número</th>
           <th>Nome</th>
-          <th>WhatsApp</th>
+          <th>Telefone</th>
           <th>Status</th>
-          <th>Comprovante</th>
-          <th>Ações</th>
+          <th>Data</th>
         </tr>
       </thead>
-      <tbody id="tabela-corpo"></tbody>
+      <tbody id="tabela-corpo">
+        <!-- dados preenchidos dinamicamente -->
+      </tbody>
     </table>
-  </div>
-
-  <!-- Firebase SDK compat -->
-  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
+  </main>
 
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyAmIKqT6FKAIOJXvBMop89kATeKUsy4yR0",
-      authDomain: "rifa-stanley.firebaseapp.com",
-      projectId: "rifa-stanley",
-      storageBucket: "rifa-stanley.firebasestorage.app",
-      messagingSenderId: "811838072733",
-      appId: "1:811838072733:web:c380ce75a40d1b90ca3174",
-      measurementId: "G-L9CQJX7ZNJ"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-
-    async function carregarReservas() {
-      const tabela = document.getElementById('tabela-corpo');
-      tabela.innerHTML = '';
-      const docSnap = await db.doc("rifa/numeros").get();
-      if (docSnap.exists) {
-        const data = docSnap.data();
-        Object.keys(data).forEach(numero => {
-          const info = data[numero];
-          const tr = document.createElement('tr');
-
-          tr.innerHTML = `
-            <td>${numero}</td>
-            <td>${info.nome || '-'}</td>
-            <td>${info.whatsapp || '-'}</td>
-            <td>${info.status || '-'}</td>
-            <td>${info.comprovante ? `<a href="${info.comprovante}" target="_blank">📎 Ver</a>` : '-'}</td>
-            <td class="actions">
-              <button class="btn-pago" onclick="marcarPago('${numero}')">Pago</button>
-              <button class="btn-cancelar" onclick="cancelarReserva('${numero}')">Cancelar</button>
-            </td>
-          `;
-
-          tabela.appendChild(tr);
-        });
+    const senhaCorreta = "admin2025";
+    function verificarSenha() {
+      const senha = document.getElementById('senha').value;
+      if (senha === senhaCorreta) {
+        document.getElementById('auth-modal').style.display = 'none';
+      } else {
+        const erro = document.getElementById('mensagem-erro');
+        erro.textContent = "Senha incorreta.";
+        erro.style.display = "block";
       }
     }
-
-    async function marcarPago(numero) {
-      const docRef = db.doc("rifa/numeros");
-      const snap = await docRef.get();
-      if (snap.exists) {
-        let data = snap.data();
-        if (data[numero]) {
-          data[numero].status = 'vendido';
-          await docRef.set(data);
-          carregarReservas();
-        }
-      }
-    }
-
-    async function cancelarReserva(numero) {
-      const docRef = db.doc("rifa/numeros");
-      const snap = await docRef.get();
-      if (snap.exists) {
-        let data = snap.data();
-        delete data[numero];
-        await docRef.set(data);
-        carregarReservas();
-      }
-    }
-
-    window.onload = carregarReservas;
   </script>
 </body>
 </html>
