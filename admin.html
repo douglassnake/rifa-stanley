@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Painel de Gestão - Rifa</title>
+  <title>Painel de Gestão Protegido</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -37,6 +37,16 @@
     tr:nth-child(even) {
       background: #f2f2f2;
     }
+    button {
+      padding: 5px 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      color: white;
+    }
+    .pago-btn { background: #4CAF50; }
+    .cancelar-btn { background: #F44336; }
+
     /* Modal de senha */
     .auth-modal {
       position: fixed;
@@ -80,7 +90,7 @@
 </head>
 <body>
   <header>
-    <h1>📊 Painel de Gestão da Rifa</h1>
+    <h1>📊 Painel de Gestão - Rifa</h1>
   </header>
 
   <!-- Modal de senha -->
@@ -102,15 +112,32 @@
           <th>Telefone</th>
           <th>Status</th>
           <th>Data</th>
+          <th>Ações</th>
         </tr>
       </thead>
-      <tbody id="tabela-corpo">
-        <!-- dados preenchidos dinamicamente -->
-      </tbody>
+      <tbody id="tabela-corpo"></tbody>
     </table>
   </main>
 
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
+
   <script>
+    // Configuração Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyAmIKqT6FKAlOJXvBMop89kATekUsy4yR0",
+      authDomain: "rifa-stanley.firebaseapp.com",
+      projectId: "rifa-stanley",
+      storageBucket: "rifa-stanley.appspot.com",
+      messagingSenderId: "811838072733",
+      appId: "1:811838072733:web:c380ce75a40d1b90ca3174",
+      measurementId: "G-L9C0JX7ZNJ"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Senha de acesso
     const senhaCorreta = "admin2025";
     function verificarSenha() {
       const senha = document.getElementById('senha').value;
@@ -121,6 +148,57 @@
         erro.textContent = "Senha incorreta.";
         erro.style.display = "block";
       }
+    }
+
+    // Carregar reservas
+    const tabela = document.getElementById('tabela-corpo');
+    db.doc("rifa/numeros").onSnapshot((docSnap) => {
+      tabela.innerHTML = "";
+      if (docSnap.exists) {
+        const data = docSnap.data();
+        Object.keys(data).forEach(numero => {
+          const info = data[numero];
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${numero}</td>
+            <td>${info.nome || ""}</td>
+            <td>${info.whatsapp || ""}</td>
+            <td>${info.status || ""}</td>
+            <td>${info.timestamp ? new Date(info.timestamp).toLocaleString() : ""}</td>
+            <td>
+              <button class="pago-btn" onclick="marcarPago('${numero}')">Pago</button>
+              <button class="cancelar-btn" onclick="cancelarReserva('${numero}')">Cancelar</button>
+            </td>
+          `;
+          tabela.appendChild(tr);
+        });
+      }
+    });
+
+    // Marcar como pago
+    function marcarPago(numero) {
+      const ref = db.doc("rifa/numeros");
+      ref.get().then(doc => {
+        if (doc.exists) {
+          const data = doc.data();
+          if (data[numero]) {
+            data[numero].status = "vendido";
+            ref.set(data);
+          }
+        }
+      });
+    }
+
+    // Cancelar reserva
+    function cancelarReserva(numero) {
+      const ref = db.doc("rifa/numeros");
+      ref.get().then(doc => {
+        if (doc.exists) {
+          const data = doc.data();
+          delete data[numero];
+          ref.set(data);
+        }
+      });
     }
   </script>
 </body>
