@@ -1,4 +1,3 @@
-
 // ========================
 // ELEMENTOS GERAIS
 // ========================
@@ -55,6 +54,14 @@ form.addEventListener('submit', async (e) => {
   const nome = document.getElementById('nome').value;
   const whatsapp = document.getElementById('whatsapp').value;
 
+  // Campo de comprovante opcional
+  const fileInput = document.getElementById('comprovante');
+  let file = null;
+  if (fileInput && fileInput.files.length > 0) {
+    file = fileInput.files[0];
+  }
+
+  // 🔥 Se Firebase estiver ativo, salva a reserva
   if (useFirebase) {
     try {
       const docRef = db.doc("rifa/numeros");
@@ -71,7 +78,8 @@ form.addEventListener('submit', async (e) => {
         nome,
         whatsapp,
         status: "reservado",
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        comprovante: file ? file.name : null // 👈 salva nome do arquivo se houver
       };
 
       await docRef.set(data);
@@ -82,6 +90,7 @@ form.addEventListener('submit', async (e) => {
     }
   }
 
+  // Atualiza visualmente na grade
   const div = document.getElementById(`num-${numero}`);
   if (div) {
     div.classList.remove('disponivel');
