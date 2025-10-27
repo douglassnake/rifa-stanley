@@ -1,116 +1,121 @@
-// ==========================
-// Inicialização Firebase
-// ==========================
-if (typeof firebase !== "undefined") {
-  firebase.initializeApp(firebaseConfig);
-  var db = firebase.firestore();
-}
-
-let useFirebase = typeof db !== 'undefined' && db !== null;
-
-// ==========================
-// Elementos do DOM
-// ==========================
-const modal = document.getElementById("modal");
-const closeModal = document.getElementById("closeModal");
-const reservaForm = document.getElementById("reservaForm");
-const numeroSelecionadoEl = document.getElementById("numeroSelecionado");
-const grid = document.querySelector(".grid");
-
-let numeroSelecionado = null;
-
-// ==========================
-// Geração da Grade
-// ==========================
+// ========================
+// GERAÇÃO DA GRADE DE NÚMEROS
+// ========================
+const grid = document.getElementById('grid');
 const totalNumeros = 250;
-for (let i = 1; i <= totalNumeros; i++) {
-  const numeroEl = document.createElement("div");
-  numeroEl.classList.add("numero", "disponivel");
-  numeroEl.textContent = i;
 
-  numeroEl.addEventListener("click", () => {
-    if (numeroEl.classList.contains("vendido") || numeroEl.classList.contains("reservado")) {
-      alert("Este número já foi reservado.");
-      return;
-    }
-    numeroSelecionado = i;
-    numeroSelecionadoEl.textContent = i;
-    modal.classList.remove("hidden");
-  });
-
-  grid.appendChild(numeroEl);
+// Função para formatar números com 3 dígitos (001, 002...)
+function formatNumero(n) {
+  return n.toString().padStart(3, '0');
 }
 
-// ==========================
-// Fechar modal
-// ==========================
-closeModal.addEventListener("click", () => {
-  modal.classList.add("hidden");
-  reservaForm.reset();
-  numeroSelecionado = null;
-});
+// Gera os botões da rifa
+for (let i = 1; i <= totalNumeros; i++) {
+  const numeroFormatado = formatNumero(i);
+  const btn = document.createElement('button');
+  btn.id = `num-${numeroFormatado}`;
+  btn.textContent = numeroFormatado;
+  btn.classList.add('numero', 'disponivel');
+  btn.addEventListener('click', () => abrirModal(numeroFormatado));
+  grid.appendChild(btn);
+}
 
-// ==========================
-// Enviar Reserva
-// ==========================
-reservaForm.addEventListener("submit", async (e) => {
+// ========================
+// MODAL DE RESERVA
+// ========================
+const modal = document.getElementById('modal');
+const numeroSelecionadoInput = document.getElementById('numero-selecionado');
+
+function abrirModal(numero) {
+  numeroSelecionadoInput.value = numero;
+  modal.classList.remove('hidden');
+}
+
+function fecharModal() {
+  modal.classList.add('hidden');
+  numeroSelecionadoInput.value = '';
+  document.getElementById('reserva-form').reset();
+}
+
+// ========================
+// FIREBASE FALLBACK
+// ========================
+let useFirebase = typeof db !== 'undefined' && db !== null;
+console.log("🔥 Firebase ativo?", useFirebase);
+
+// ========================
+// FORM DE RESERVA
+// ========================
+document.getElementById('reserva-form').addEventListener('submit', async (e) => {
   e.preventDefault();
-  console.log("🚀 Enviando reserva...");
-
-  const nome = document.getElementById("nome").value.trim();
-  const telefone = document.getElementById("telefone").value.trim();
-
-  if (!nome || !telefone || !numeroSelecionado) {
-    alert("Por favor, preencha todos os campos.");
-    return;
-  }
+  const numero = numeroSelecionadoInput.value;
+  const nome = document.getElementById('nome').value;
+  const whatsapp = document.getElementById('whatsapp').value;
 
   if (useFirebase) {
     try {
-      console.log("🔥 Gravando no Firestore...");
-      const numeroRef = db.collection("rifa").doc(numeroSelecionado.toString());
-      await numeroRef.set({
-        numero: numeroSelecionado,
-        nome: nome,
-        telefone: telefone,
-        status: "Pendente",
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-      });
+      const docRef = db.doc("rifa/numeros");
+      const snap = await docRef.get();
+      let data = snap.exists ? snap.data() : {};
 
-      console.log("✅ Número reservado com sucesso!");
-      alert(`Número ${numeroSelecionado} reservado com sucesso!`);
-
-      const numeroEl = Array.from(grid.children).find(el => el.textContent == numeroSelecionado);
-      if (numeroEl) {
-        numeroEl.classList.remove("disponivel");
-        numeroEl.classList.add("reservado");
+      if (data[numero] && data[numero].status !== 'disponivel') {
+        alert("Esse número já foi reservado ou vendido.");
+        fecharModal();
+        return;
       }
 
-      modal.classList.add("hidden");
-      reservaForm.reset();
-      numeroSelecionado = null;
+      data[numero] = {
+        nome,
+        whatsapp,
+        status: "reservado",
+        timestamp: new Date().toISOString()
+      };
 
-    } catch (error) {
-      console.error("❌ Erro ao salvar reserva:", error);
-      alert("Ocorreu um erro ao salvar a reserva. Verifique as permissões do Firestore.");
+      await docRef.set(data);
+      console.log(`📌 Número ${numero} reservado no Firebase para ${nome}`);
+    } catch (err) {
+      console.error("🔥 Erro ao salvar no Firebase:", err);
+      alert("Falha ao salvar no servidor. Sua reserva local foi registrada.");
     }
-  } else {
-    alert(⚠️ Firebase não configurado corretamente.");
   }
+
+  // Atualiza localmente
+  const btn = document.getElementById(`num-${numero}`);
+  if (btn) {
+    btn.classList.remove('disponivel');
+    btn.classList.add('reservado');
+    btn.disabled = true;
+  }
+
+  fecharModal();
 });
 
-// ==========================
-// Leitura em tempo real
-// ==========================
+// ========================
+// ATUALIZAÇÃO EM TEMPO REAL COM FIREBASE
+// ========================
 if (useFirebase) {
-  db.collection("rifa").onSnapshot(snapshot => {
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      const numeroEl = Array.from(grid.children).find(el => el.textContent == data.numero);
-      if (numeroEl) {
-        numeroEl.classList.remove("disponivel");
-        numeroEl.classList.add("reservado");
-      }
-    });
+  db.doc("rifa/numeros").onSnapshot((docSnap) => {
+    if (docSnap.exists) {
+      const data = docSnap.data();
+      Object.keys(data).forEach(numero => {
+        const info = data[numero];
+        const btn = document.getElementById(`num-${numero}`);
+        if (btn) {
+          if (info.status === 'reservado') {
+            btn.classList.remove('disponivel');
+            btn.classList.add('reservado');
+            btn.disabled = true;
+          } else if (info.status === 'vendido') {
+            btn.classList.remove('disponivel');
+            btn.classList.add('vendido');
+            btn.disabled = true;
+          } else {
+            btn.classList.remove('reservado', 'vendido');
+            btn.classList.add('disponivel');
+            btn.disabled = false;
+          }
+        }
+      });
+    }
   });
 }
