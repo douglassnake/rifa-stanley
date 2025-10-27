@@ -1,84 +1,28 @@
-/* ======== ESTILOS GERAIS ======== */
-body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f5f5f5;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+
+html, body {
+  overscroll-behavior-x: contain;
 }
 
-header {
-  text-align: center;
-  background-color: #1a1a1a;
-  color: white;
-  padding: 20px 10px;
+/* ======== WRAPPER DA GRADE ======== */
+.grid-wrapper {
   width: 100%;
-}
-
-h1 {
-  margin: 0;
-  font-size: 24px;
-}
-
-p {
-  margin-top: 5px;
-  font-size: 16px;
-}
-
-/* ======== BOTÃO COPIAR PIX ======== */
-.copy-btn {
-  background:#1a73e8;
-  color:#fff;
-  border:none;
-  padding:6px 10px;
-  border-radius:6px;
-  cursor:pointer;
-  font-weight:600;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
-}
-.copy-btn:active { transform: translateY(1px); }
-
-/* Toast (mensagem de confirmação) */
-.pix-toast {
-  position: fixed;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%) translateY(12px);
-  background: rgba(0,0,0,0.85);
-  color: #fff;
-  padding: 10px 14px;
-  border-radius: 8px;
-  font-size: 14px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 240ms ease, transform 240ms ease;
-  z-index: 2000;
-}
-.pix-toast.show {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-  pointer-events: auto;
-}
-
-/* ======== GRADE DE NÚMEROS (FLEX PARA IOS) ======== */
-.grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  min-width: 800px; /* força scroll horizontal real */
-  max-width: 100%;
-  margin: 20px auto;
-  padding: 10px;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  scroll-snap-type: none; /* evita snapping */
   padding-left: max(12px, env(safe-area-inset-left));
   padding-right: max(12px, env(safe-area-inset-right));
   box-sizing: border-box;
 }
 
+/* ======== GRADE DE NÚMEROS ======== */
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 850px; /* garante rolagem horizontal real */
+  padding: 10px 0;
+}
+
+/* ======== ESTILO DOS NÚMEROS ======== */
 .numero {
   background-color: #e0e0e0;
   padding: 15px;
@@ -86,10 +30,10 @@ p {
   text-align: center;
   font-weight: bold;
   cursor: pointer;
-  transition: 0.2s;
   user-select: none;
   min-width: 60px;
-  flex: 0 0 auto; /* impede que encolha */
+  flex: 0 0 auto;
+  scroll-snap-align: start;
 }
 
 .numero:hover {
@@ -109,7 +53,6 @@ p {
 .numero.vendido {
   background-color: #F44336;
   color: white;
-  cursor: not-allowed;
 }
 
 /* ======== MODAL ======== */
@@ -175,13 +118,4 @@ p {
 .modal-actions button:last-child {
   background-color: #4CAF50;
   color: white;
-}
-
-@media (max-width: 600px) {
-  .grid {
-    min-width: 500px; /* ainda forçando scroll horizontal em telas pequenas */
-  }
-  .numero {
-    padding: 10px;
-  }
 }
