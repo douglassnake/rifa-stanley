@@ -1,41 +1,13 @@
+
 // ========================
-// GERAÇÃO DA GRADE DE NÚMEROS
+// ELEMENTOS GERAIS
 // ========================
 const grid = document.getElementById('grid');
-const totalNumeros = 250;
-
-// Função para formatar números com 3 dígitos (001, 002...)
-function formatNumero(n) {
-  return n.toString().padStart(3, '0');
-}
-
-// Gera os botões da rifa
-for (let i = 1; i <= totalNumeros; i++) {
-  const numeroFormatado = formatNumero(i);
-  const btn = document.createElement('button');
-  btn.id = `num-${numeroFormatado}`;
-  btn.textContent = numeroFormatado;
-  btn.classList.add('numero', 'disponivel');
-  btn.addEventListener('click', () => abrirModal(numeroFormatado));
-  grid.appendChild(btn);
-}
-
-// ========================
-// MODAL DE RESERVA
-// ========================
 const modal = document.getElementById('modal');
 const numeroSelecionadoInput = document.getElementById('numero-selecionado');
+const form = document.getElementById('reserva-form');
 
-function abrirModal(numero) {
-  numeroSelecionadoInput.value = numero;
-  modal.classList.remove('hidden');
-}
-
-function fecharModal() {
-  modal.classList.add('hidden');
-  numeroSelecionadoInput.value = '';
-  document.getElementById('reserva-form').reset();
-}
+const totalNumeros = 250;
 
 // ========================
 // FIREBASE FALLBACK
@@ -44,9 +16,40 @@ let useFirebase = typeof db !== 'undefined' && db !== null;
 console.log("🔥 Firebase ativo?", useFirebase);
 
 // ========================
+// GERAÇÃO DA GRADE
+// ========================
+function formatNumero(n) {
+  return n.toString().padStart(3, '0');
+}
+
+for (let i = 1; i <= totalNumeros; i++) {
+  const numeroFormatado = formatNumero(i);
+  const div = document.createElement('div');
+  div.id = `num-${numeroFormatado}`;
+  div.textContent = numeroFormatado;
+  div.classList.add('numero', 'disponivel');
+  div.addEventListener('click', () => abrirModal(numeroFormatado));
+  grid.appendChild(div);
+}
+
+// ========================
+// MODAL
+// ========================
+function abrirModal(numero) {
+  numeroSelecionadoInput.value = numero;
+  modal.classList.remove('hidden');
+}
+
+function fecharModal() {
+  modal.classList.add('hidden');
+  numeroSelecionadoInput.value = '';
+  form.reset();
+}
+
+// ========================
 // FORM DE RESERVA
 // ========================
-document.getElementById('reserva-form').addEventListener('submit', async (e) => {
+form.addEventListener('submit', async (e) => {
   e.preventDefault();
   const numero = numeroSelecionadoInput.value;
   const nome = document.getElementById('nome').value;
@@ -72,26 +75,24 @@ document.getElementById('reserva-form').addEventListener('submit', async (e) => 
       };
 
       await docRef.set(data);
-      console.log(`📌 Número ${numero} reservado no Firebase para ${nome}`);
+      console.log(`📌 Número ${numero} reservado no Firebase`);
     } catch (err) {
       console.error("🔥 Erro ao salvar no Firebase:", err);
       alert("Falha ao salvar no servidor. Sua reserva local foi registrada.");
     }
   }
 
-  // Atualiza localmente
-  const btn = document.getElementById(`num-${numero}`);
-  if (btn) {
-    btn.classList.remove('disponivel');
-    btn.classList.add('reservado');
-    btn.disabled = true;
+  const div = document.getElementById(`num-${numero}`);
+  if (div) {
+    div.classList.remove('disponivel');
+    div.classList.add('reservado');
   }
 
   fecharModal();
 });
 
 // ========================
-// ATUALIZAÇÃO EM TEMPO REAL COM FIREBASE
+// ATUALIZAÇÃO EM TEMPO REAL
 // ========================
 if (useFirebase) {
   db.doc("rifa/numeros").onSnapshot((docSnap) => {
@@ -99,20 +100,17 @@ if (useFirebase) {
       const data = docSnap.data();
       Object.keys(data).forEach(numero => {
         const info = data[numero];
-        const btn = document.getElementById(`num-${numero}`);
-        if (btn) {
+        const div = document.getElementById(`num-${numero}`);
+        if (div) {
           if (info.status === 'reservado') {
-            btn.classList.remove('disponivel');
-            btn.classList.add('reservado');
-            btn.disabled = true;
+            div.classList.remove('disponivel');
+            div.classList.add('reservado');
           } else if (info.status === 'vendido') {
-            btn.classList.remove('disponivel');
-            btn.classList.add('vendido');
-            btn.disabled = true;
+            div.classList.remove('disponivel');
+            div.classList.add('vendido');
           } else {
-            btn.classList.remove('reservado', 'vendido');
-            btn.classList.add('disponivel');
-            btn.disabled = false;
+            div.classList.remove('reservado', 'vendido');
+            div.classList.add('disponivel');
           }
         }
       });
