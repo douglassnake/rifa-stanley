@@ -62,17 +62,19 @@ p {
   pointer-events: auto;
 }
 
-/* ======== GRADE DE NÚMEROS (CORRIGIDO PARA IPHONE) ======== */
+/* ======== GRADE DE NÚMEROS (FLEX PARA IOS) ======== */
 .grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-  max-width: 800px;
+  min-width: 800px; /* força scroll horizontal real */
+  max-width: 100%;
   margin: 20px auto;
   padding: 10px;
-  overflow-x: auto;                /* 👈 permite scroll lateral */
-  -webkit-overflow-scrolling: touch; /* 👈 rolagem suave no iOS */
-  padding-left: max(12px, env(safe-area-inset-left)); /* 👈 afasta da borda */
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: none; /* evita snapping */
+  padding-left: max(12px, env(safe-area-inset-left));
   padding-right: max(12px, env(safe-area-inset-right));
   box-sizing: border-box;
 }
@@ -86,8 +88,8 @@ p {
   cursor: pointer;
   transition: 0.2s;
   user-select: none;
-  min-width: 60px;      /* 👈 garante tamanho fixo mínimo */
-  flex-shrink: 0;       /* 👈 impede "comer" a primeira coluna */
+  min-width: 60px;
+  flex: 0 0 auto; /* impede que encolha */
 }
 
 .numero:hover {
@@ -177,7 +179,7 @@ p {
 
 @media (max-width: 600px) {
   .grid {
-    grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
+    min-width: 500px; /* ainda forçando scroll horizontal em telas pequenas */
   }
   .numero {
     padding: 10px;
