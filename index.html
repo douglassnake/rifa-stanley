@@ -1,54 +1,174 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Rifa - Stanley 7,5L</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Rifa Stanley 7,5L</title>
+  <link rel="stylesheet" href="style.css" />
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: #f5f5f5;
+    .copy-btn {
+      background:#1a73e8;
+      color:#fff;
+      border:none;
+      padding:6px 10px;
+      border-radius:6px;
+      cursor:pointer;
+      font-weight:600;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
     }
-    header {
-      background: #1a1a1a;
+    .copy-btn:active { transform: translateY(1px); }
+
+    .pix-toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(12px);
+      background: rgba(0,0,0,0.85);
       color: #fff;
-      padding: 15px;
-      text-align: center;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 240ms ease, transform 240ms ease;
+      z-index: 2000;
     }
-    .premio-container {
-      text-align: center;
-      margin-top: 15px;
-    }
-    .premio-img {
-      max-width: 250px;
-      width: 90%;
-      border-radius: 10px;
-      box-shadow: 0 0 8px rgba(0,0,0,0.2);
-    }
-    .premio-container p {
-      font-weight: bold;
-      margin-top: 8px;
+    .pix-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+      pointer-events: auto;
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>🎁 Rifa Stanley 7,5L Green</h1>
-    <p>1 número = R$ 15,00 | 2 números = R$ 20,00</p>
+    <h1 style="display:flex;align-items:center;justify-content:center;gap:8px;">
+  <img src="iam-logo.png" alt="Logo IAM" style="width:40px;height:40px;border-radius:50%;">
+  INFÂNCIA E ADOLESCÊNCIA MISSIONÁRIA
+</h1>
+
+    <h1> RIFA: Uma Garrafa Térmica Stanley 7,5 litros Verde</h1>
+    <h1> 1 número por R$ 15,00 | 2 números por R$ 20,00 </h1>
+    <p style="display:flex;align-items:center;gap:8px;">
+      PIX - <strong id="pix-key">douglas.gmor@gmail.com</strong>
+      <button id="copy-pix" class="copy-btn" type="button" aria-label="Copiar chave PIX">📋 Copiar PIX</button>
+    </p>
   </header>
 
-  <!-- Imagem responsiva do prêmio -->
-  <div class="premio-container">
-    <img src="stanley-premio.png" alt="Prêmio Rifa Stanley" class="premio-img">
-    <p>Prêmio: Garrafão Stanley 7,5L</p>
+  <main>
+    <div id="grid" class="grid"></div>
+  </main>
+
+  <div id="modal" class="modal hidden">
+    <div class="modal-content">
+      <h2>Reservar Número</h2>
+      <form id="reserva-form">
+        <input type="hidden" id="numero-selecionado" name="numero" />
+        <label>Nome:</label>
+        <input type="text" id="nome" required />
+
+        <label>WhatsApp:</label>
+        <input type="text" id="whatsapp" required />
+
+        <label>Comprovante (imagem ou PDF):</label>
+        <input type="file" id="comprovante" accept="image/*,.pdf" required />
+
+        <div class="modal-actions">
+          <button type="button" onclick="fecharModal()">Cancelar</button>
+          <button type="submit">Enviar Reserva</button>
+        </div>
+      </form>
+    </div>
   </div>
 
-  <div id="app"></div>
+  <!-- Toast para PIX -->
+  <div id="pix-toast" class="pix-toast" aria-hidden="true">Chave PIX copiada!</div>
 
+  <!-- Firebase SDK compat -->
+  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-storage-compat.js"></script>
+
+  <!-- Inicialização Firebase -->
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAmIKqT6FKAIOJXvBMop89kATeKUsy4yR0",
+      authDomain: "rifa-stanley.firebaseapp.com",
+      projectId: "rifa-stanley",
+      storageBucket: "rifa-stanley.firebasestorage.app",
+      messagingSenderId: "811838072733",
+      appId: "1:811838072733:web:c380ce75a40d1b90ca3174",
+      measurementId: "G-L9CQJX7ZNJ"
+    };
+
+    try {
+      firebase.initializeApp(firebaseConfig);
+      window.db = firebase.firestore();
+      window.storage = firebase.storage();
+      console.log("✅ Firebase + Storage inicializados com sucesso!");
+    } catch (e) {
+      console.warn("⚠️ Erro ao inicializar Firebase (modo local):", e);
+      window.db = null;
+      window.storage = null;
+    }
+
+    // --- Copiar PIX ---
+    (function(){
+      const copyBtn = document.getElementById('copy-pix');
+      const pixKeyEl = document.getElementById('pix-key');
+      const toast = document.getElementById('pix-toast');
+
+      if (!copyBtn || !pixKeyEl || !toast) return;
+
+      async function showToast(msg = "Chave PIX copiada!") {
+        toast.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2500);
+      }
+
+      async function copyTextToClipboard(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          try {
+            await navigator.clipboard.writeText(text);
+            return true;
+          } catch (e) {}
+        }
+        try {
+          const textarea = document.createElement('textarea');
+          textarea.value = text;
+          textarea.style.position = 'fixed';
+          textarea.style.left = '-9999px';
+          document.body.appendChild(textarea);
+          textarea.focus();
+          textarea.select();
+          const successful = document.execCommand('copy');
+          document.body.removeChild(textarea);
+          return successful;
+        } catch (e) {
+          return false;
+        }
+      }
+
+      copyBtn.addEventListener('click', async () => {
+        const chave = pixKeyEl.textContent.trim();
+        const ok = await copyTextToClipboard(chave);
+        if (ok) {
+          showToast('Chave PIX copiada!');
+          const original = copyBtn.textContent;
+          copyBtn.textContent = 'Copiado ✅';
+          copyBtn.disabled = true;
+          setTimeout(() => {
+            copyBtn.textContent = original;
+            copyBtn.disabled = false;
+          }, 1800);
+        } else {
+          alert('Não foi possível copiar automaticamente. Selecione e copie manualmente: ' + chave);
+        }
+      });
+    })();
+  </script>
+
+  <!-- Script principal -->
   <script src="script.js"></script>
 </body>
 </html>
